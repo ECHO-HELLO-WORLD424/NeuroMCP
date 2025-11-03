@@ -54,7 +54,7 @@ NeuroMCP bridges the gap between the Neuro AI system and MCP servers, allowing t
 
 - **MCP Tool → Neuro Action Translation**: Automatically converts MCP tools to Neuro-compatible actions
 - **Schema Simplification**: Removes MCP schema features not supported by Neuro-API
-- **Web Transport**: Supports SSE (Server-Sent Events) for MCP communication
+- **Web Transport**: Supports Stream HTTP for MCP communication
 - **Client Mode**: Connects to Neuro server as a client (no port conflicts)
 - **Real-time Synchronization**: Dynamically updates available tools
 - **Proxy Bypass**: Automatically bypasses system proxies for localhost connections
@@ -112,7 +112,7 @@ neuromcp --help
 ```
 
 Options:
-- `--mcp-url`: URL of the MCP server SSE endpoint (default: `http://127.0.0.1:3000/mcp`)
+- `--mcp-url`: URL of the MCP server MCP endpoint (default: `http://127.0.0.1:3000/mcp`)
 - `--neuro-url`: WebSocket URL of the Neuro server (default: `ws://localhost:8000`)
 - `--game-name`: Name of the game/application (default: `NeuroMCP`)
 - `--debug`: Enable debug logging
@@ -162,8 +162,8 @@ Expected output:
 Mock MCP Server
 ============================================================
 
-Serving MCP tools via SSE at:
-  http://localhost:3000/sse
+Serving MCP tools via Streamable HTTP at:
+  http://localhost:3000/mcp
 
 Available tools:
   - echo: Echo back a message
@@ -183,7 +183,7 @@ Expected output:
 ============================================================
 NeuroMCP Bridge (Client Mode)
 ============================================================
-MCP Server: http://localhost:3000/sse
+MCP Server: http://localhost:3000/mcp
 Neuro Server: ws://localhost:8000
 Game Name: NeuroMCP
 ============================================================
@@ -267,12 +267,12 @@ To use with production MCP servers:
 
 ### Components
 
-1. **MCP Client** (`mcp_client.py`): Connects to MCP servers via SSE transport
+1. **MCP Client** (`mcp_client.py`): Connects to MCP servers via Stream HTTP transport
 2. **Translation Layer** (`translation.py`): Converts between MCP and Neuro formats
 3. **Neuro Client** (`neuro_client.py`): Implements the Neuro-API client protocol
 4. **Bridge** (`bridge.py`): Orchestrates the entire translation process
 
-### Key Design: Client Mode
+### Client Mode
 
 The bridge operates as a **Neuro client**. This means:
 - It **connects TO** a Neuro server (like the test server or real Neuro AI)
