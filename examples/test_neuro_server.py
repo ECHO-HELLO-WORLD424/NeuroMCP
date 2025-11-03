@@ -4,6 +4,7 @@ Test Neuro Server for MCP translation layer development. Based on ConsoleInterac
 
 import logging
 import traceback
+from typing import Final
 
 import trio
 from trio_websocket import WebSocketConnection
@@ -13,6 +14,45 @@ from neuro_api.command import Action
 
 logging.basicConfig(level=logging.INFO, format='[ %(levelname)s | PID=%(process)d | %(name)s ]: %(message)s')
 logger = logging.getLogger(__name__)
+
+
+INVALID_SCHEMA_KEYS: Final = frozenset(
+    {
+        "$anchor",
+        "$comment",
+        "$defs",
+        "$dynamicAnchor",
+        "$dynamicRef",
+        "$id",
+        "$ref",
+        "$schema",
+        "$vocabulary",
+        "additionalProperties",
+        "allOf",
+        "anyOf",
+        "contentEncoding",
+        "contentMediaType",
+        "contentSchema",
+        "dependentRequired",
+        "dependentSchemas",
+        "deprecated",
+        "description",
+        "else",
+        "if",
+        "maxProperties",
+        "minProperties",
+        "multipleOf",
+        "not",
+        "oneOf",
+        "patternProperties",
+        "readOnly",
+        "then",
+        "title",
+        "unevaluatedItems",
+        "unevaluatedProperties",
+        "writeOnly",
+    },
+)
 
 
 class NeuroTestServer(AbstractTrioNeuroServer):
