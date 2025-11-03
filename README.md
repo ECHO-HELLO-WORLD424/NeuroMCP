@@ -261,7 +261,7 @@ To use with production MCP servers:
 1. Install and start an MCP server (Tested: playwright-mcp)
 2. Run the bridge:
    ```bash
-   neuromcp --mcp-url http://your-mcp-server:port/sse
+   neuromcp --mcp-url http://your-mcp-server:port/mcp
    ```
 3. Start the test server and send commands
 

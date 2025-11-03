@@ -18,8 +18,8 @@ def cli() -> None:
 
     parser.add_argument(
         "--mcp-url",
-        default="http://127.0.0.1:3000/sse",
-        help="URL of the MCP server (SSE endpoint)",
+        default="http://127.0.0.1:3000/mcp",
+        help="URL of the MCP server endpoint",
     )
 
     parser.add_argument(

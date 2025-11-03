@@ -32,7 +32,7 @@ def main():
     print("In Terminal 1, run:")
     print("  cd NeuroMCP/examples")
     print("  python mock_mcp_server.py")
-    print("\nThis will start an MCP server at http://localhost:3000/sse")
+    print("\nThis will start an MCP server at http://localhost:3000/mcp")
     print("with 4 test tools: echo, add, greet, current_time")
 
     input("\nPress Enter when the MCP server is running...")
@@ -63,7 +63,7 @@ def main():
     print_section("Expected Behavior")
 
     print("1. MCP Server Output:")
-    print("   - Shows 'Serving MCP tools via SSE at http://localhost:3000/sse'")
+    print("   - Shows 'Serving MCP tools via Streamable HTTP at http://localhost:3000/mcp'")
     print("   - Lists available tools: echo, add, greet, current_time")
 
     print("\n2. Bridge Output:")
@@ -106,7 +106,7 @@ def main():
 
     print("If the bridge fails to connect to MCP server:")
     print("  - Check that mock_mcp_server.py is running")
-    print("  - Verify http://localhost:3000/sse is accessible")
+    print("  - Verify http://localhost:3000/mcp is accessible")
     print("  - Check for error messages in bridge output")
 
     print("\nIf Neuro client can't connect:")
@@ -128,7 +128,7 @@ def main():
 
     print("\n# Terminal 2: Bridge")
     print("cd C:\\Dev\\PyCharmProjects\\NeuroMCP")
-    print("python -m neuro_mcp --verbose --mcp-url http://localhost:3000/sse")
+    print("python -m neuro_mcp --verbose --mcp-url http://localhost:3000/mcp")
 
     print("\n# Terminal 3: Test Client")
     print("cd C:\\Dev\\PyCharmProjects\\Neuro-API")

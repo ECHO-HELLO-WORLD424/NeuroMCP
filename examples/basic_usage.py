@@ -16,13 +16,12 @@ async def run_basic_bridge():
 
     # Create the bridge
     # This assumes:
-    # 1. An MCP server is running at http://localhost:3000/sse
+    # 1. An MCP server is running at http://localhost:3000/mcp
     # 2. A Neuro test server is running at ws://localhost:8000
     bridge = NeuroMCPBridge(
         neuro_websocket_url="ws://localhost:8000",
         game_name="NeuroMCP",
-        mcp_server_url="http://localhost:3000/sse",
-        mcp_transport="sse",
+        mcp_server_url="http://localhost:3000/mcp",
     )
 
     print("\n" + "=" * 60)

@@ -28,24 +28,21 @@ class NeuroMCPBridge:
         self,
         neuro_websocket_url: str = "ws://localhost:8000",
         game_name: str = "NeuroMCP",
-        mcp_server_url: str = "http://localhost:3000/sse",
-        mcp_transport: str = "sse",
+        mcp_server_url: str = "http://localhost:3000/mcp",
     ):
         """Initialize the bridge.
 
         Args:
             neuro_websocket_url: WebSocket URL of the Neuro server
             game_name: Name of the game/application
-            mcp_server_url: URL of the MCP server
-            mcp_transport: MCP transport type ("sse" or "websocket")
+            mcp_server_url: URL of the MCP server endpoint
         """
         self.neuro_websocket_url = neuro_websocket_url
         self.game_name = game_name
         self.mcp_server_url = mcp_server_url
-        self.mcp_transport = mcp_transport
 
         # Initialize components
-        self.mcp_client = MCPClient(mcp_server_url, mcp_transport)
+        self.mcp_client = MCPClient(mcp_server_url)
         self.neuro_client = NeuroMCPClient(game_name, self._handle_neuro_action)
         self.tool_registry = ToolRegistry()
 
@@ -128,7 +125,7 @@ class NeuroMCPBridge:
         and synchronizes tools between them.
         """
         logger.info("Starting NeuroMCP Bridge...")
-        logger.info(f"MCP server: {self.mcp_server_url} ({self.mcp_transport})")
+        logger.info(f"MCP server: {self.mcp_server_url} (Streamable HTTP)")
         logger.info(f"Neuro server: {self.neuro_websocket_url}")
 
         async with self.mcp_client:
@@ -166,14 +163,14 @@ class NeuroMCPBridge:
 
 
 async def main(
-    mcp_server_url: str = "http://localhost:3000/sse",
+    mcp_server_url: str = "http://localhost:3000/mcp",
     neuro_websocket_url: str = "ws://localhost:8000",
     game_name: str = "NeuroMCP",
 ) -> None:
     """Main entry point for running the bridge.
 
     Args:
-        mcp_server_url: URL of the MCP server
+        mcp_server_url: URL of the MCP server endpoint
         neuro_websocket_url: WebSocket URL of the Neuro server
         game_name: Name of the game/application
     """
@@ -188,7 +185,6 @@ async def main(
         neuro_websocket_url=neuro_websocket_url,
         game_name=game_name,
         mcp_server_url=mcp_server_url,
-        mcp_transport="sse",
     )
 
     try:

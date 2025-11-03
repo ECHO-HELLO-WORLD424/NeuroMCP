@@ -1,4 +1,4 @@
-"""MCP client implementation with web transport (SSE/WebSocket)."""
+"""MCP client implementation with Streamable HTTP transport."""
 
 import logging
 import os
@@ -6,72 +6,74 @@ from typing import Any
 from contextlib import AsyncExitStack
 
 from mcp import ClientSession
-from mcp.client.sse import sse_client
+from mcp.client.streamable_http import streamablehttp_client
 from mcp.types import Tool, Resource
 
 logger = logging.getLogger(__name__)
 
 
 class MCPClient:
-    """MCP client that connects to MCP servers via web transport."""
+    """MCP client that connects to MCP servers via Streamable HTTP transport."""
 
-    def __init__(self, server_url: str, transport: str = "sse"):
+    def __init__(self, server_url: str):
         """Initialize MCP client.
 
         Args:
-            server_url: URL of the MCP server (e.g., http://localhost:3000/sse)
-            transport: Transport type ("sse" or "websocket")
+            server_url: URL of the MCP server endpoint (e.g., http://localhost:3000/mcp)
         """
         self.server_url = server_url
-        self.transport = transport
         self.session: ClientSession | None = None
         self._exit_stack = AsyncExitStack()
         self._tools: list[Tool] = []
         self._resources: list[Resource] = []
 
     async def connect(self) -> None:
-        """Connect to the MCP server."""
-        logger.info(f"Connecting to MCP server at {self.server_url} via {self.transport}")
+        """Connect to the MCP server using Streamable HTTP transport."""
+        logger.info(f"Connecting to MCP server at {self.server_url} via Streamable HTTP")
 
-        if self.transport == "sse":
-            # Set NO_PROXY environment variable to bypass proxy for localhost
-            # This is needed on systems with system-wide proxy settings
-            old_no_proxy = os.environ.get("NO_PROXY", "")
-            old_no_proxy_lower = os.environ.get("no_proxy", "")
+        # Set NO_PROXY environment variable to bypass proxy for localhost
+        # This is needed on systems with system-wide proxy settings
+        old_no_proxy = os.environ.get("NO_PROXY", "")
+        old_no_proxy_lower = os.environ.get("no_proxy", "")
 
-            # Add localhost to NO_PROXY
-            os.environ["NO_PROXY"] = "localhost,127.0.0.1"
-            os.environ["no_proxy"] = "localhost,127.0.0.1"
+        # Add localhost to NO_PROXY
+        os.environ["NO_PROXY"] = "localhost,127.0.0.1"
+        os.environ["no_proxy"] = "localhost,127.0.0.1"
 
-            try:
-                # Use SSE transport
-                sse_transport = await self._exit_stack.enter_async_context(
-                    sse_client(self.server_url)
-                )
-                read, write = sse_transport
-                self.session = await self._exit_stack.enter_async_context(
-                    ClientSession(read, write)
-                )
-            finally:
-                # Restore original NO_PROXY values
-                if old_no_proxy:
-                    os.environ["NO_PROXY"] = old_no_proxy
-                else:
-                    os.environ.pop("NO_PROXY", None)
+        try:
+            # Use Streamable HTTP transport
+            # Note: streamablehttp_client is decorated with @asynccontextmanager
+            streamable_transport = await self._exit_stack.enter_async_context(
+                streamablehttp_client(self.server_url)
+            )
+            read, write, get_session_id = streamable_transport
 
-                if old_no_proxy_lower:
-                    os.environ["no_proxy"] = old_no_proxy_lower
-                else:
-                    os.environ.pop("no_proxy", None)
-        else:
-            raise NotImplementedError(f"Transport {self.transport} not yet implemented")
+            self.session = await self._exit_stack.enter_async_context(
+                ClientSession(read, write)
+            )
 
-        # Initialize the session
-        await self.session.initialize()
-        logger.info("MCP session initialized successfully")
+            # Initialize the session
+            await self.session.initialize()
+            logger.info("MCP session initialized successfully")
 
-        # List available tools and resources
-        await self.refresh_capabilities()
+            # Log session ID if available
+            session_id = get_session_id()
+            if session_id:
+                logger.info(f"Session ID: {session_id}")
+
+            # List available tools and resources
+            await self.refresh_capabilities()
+        finally:
+            # Restore original NO_PROXY values
+            if old_no_proxy:
+                os.environ["NO_PROXY"] = old_no_proxy
+            else:
+                os.environ.pop("NO_PROXY", None)
+
+            if old_no_proxy_lower:
+                os.environ["no_proxy"] = old_no_proxy_lower
+            else:
+                os.environ.pop("no_proxy", None)
 
     async def refresh_capabilities(self) -> None:
         """Refresh the list of available tools and resources."""

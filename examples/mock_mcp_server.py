@@ -1,12 +1,13 @@
 """Mock MCP server for testing the NeuroMCP bridge.
 
-This creates a simple MCP server with a few test tools using SSE transport.
+This creates a simple MCP server with a few test tools using Streamable HTTP transport.
 """
 
 import logging
+from contextlib import asynccontextmanager
 from mcp.server import Server
 from mcp import types
-from mcp.server.sse import SseServerTransport
+from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
 from starlette.applications import Starlette
 from starlette.routing import Route
 import uvicorn
@@ -125,43 +126,36 @@ async def call_tool(
         raise ValueError(f"Unknown tool: {name}")
 
 
-# Create SSE transport
-sse = SseServerTransport("/messages")
+# Create Streamable HTTP session manager
+session_manager = StreamableHTTPSessionManager(mcp_server)
 
 
-async def handle_sse_endpoint(request):
-    """Handle the SSE endpoint for streaming."""
-    logger.info(f"SSE connection request from {request.client}")
-
-    async with sse.connect_sse(
-        request.scope,
-        request.receive,
-        request._send,
-    ) as (read_stream, write_stream):
-        logger.info("SSE connection established, running MCP server")
-        await mcp_server.run(
-            read_stream,
-            write_stream,
-            mcp_server.create_initialization_options()
-        )
+@asynccontextmanager
+async def lifespan(app):
+    """Manage the session manager lifecycle."""
+    logger.info("Starting session manager...")
+    async with session_manager.run():
+        logger.info("Session manager running")
+        yield
+    logger.info("Session manager stopped")
 
 
-class MessagesEndpoint:
-    """ASGI endpoint for handling POST messages."""
+class MCPEndpoint:
+    """ASGI endpoint for handling MCP requests via Streamable HTTP."""
 
     async def __call__(self, scope, receive, send):
-        """Handle the messages endpoint as an ASGI app."""
-        logger.info(f"POST message from {scope.get('client')}")
-        await sse.handle_post_message(scope, receive, send)
+        """Handle the MCP endpoint as an ASGI app."""
+        logger.info(f"{scope['method']} request from {scope.get('client')}")
+        await session_manager.handle_request(scope, receive, send)
 
 
 # Create Starlette app
 app = Starlette(
     debug=True,
     routes=[
-        Route("/sse", endpoint=handle_sse_endpoint),
-        Route("/messages", endpoint=MessagesEndpoint(), methods=["POST"]),
-    ]
+        Route("/mcp", endpoint=MCPEndpoint(), methods=["GET", "POST", "DELETE"]),
+    ],
+    lifespan=lifespan
 )
 
 
@@ -170,8 +164,8 @@ def main():
     print("\n" + "=" * 60)
     print("Mock MCP Server")
     print("=" * 60)
-    print("\nServing MCP tools via SSE at:")
-    print("  http://localhost:3000/sse")
+    print("\nServing MCP tools via Streamable HTTP at:")
+    print("  http://localhost:3000/mcp")
     print("\nAvailable tools:")
     print("  - echo: Echo back a message")
     print("  - add: Add two numbers")
@@ -181,7 +175,7 @@ def main():
 
     uvicorn.run(
         app,
-        host="127.0.0.1",
+        host="localhost",
         port=3000,
         log_level="info"
     )
