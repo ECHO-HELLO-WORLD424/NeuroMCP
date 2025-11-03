@@ -107,6 +107,30 @@ class NeuroMCPClient(TrioNeuroAPIComponent):
         await self.register_neuro_actions(action_tuples)
         logger.info(f"Successfully registered {len(action_tuples)} actions")
 
+    async def unregister_all_actions(self) -> None:
+        """Unregister all currently registered actions from Neuro."""
+        if not self._registered_actions:
+            logger.info("No actions to unregister")
+            return
+
+        if self.not_connected:
+            logger.warning("Cannot unregister actions: not connected to Neuro server")
+            return
+
+        action_names = [action.name for action in self._registered_actions]
+        logger.info(f"Unregistering {len(action_names)} actions from Neuro: {action_names}")
+
+        try:
+            await self.unregister_actions(action_names)
+            logger.info("Successfully unregistered all actions")
+
+            # Clear local tracking
+            self._registered_actions = []
+            self._action_handlers = {}
+        except Exception as e:
+            logger.error(f"Failed to unregister actions: {e}", exc_info=True)
+            raise
+
     def _create_action_handler(
         self, action_name: str
     ) -> Callable[[NeuroAction], Awaitable[tuple[bool, str | None]]]:

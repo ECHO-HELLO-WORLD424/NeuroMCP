@@ -26,6 +26,7 @@ class MCPClient:
         self._exit_stack = AsyncExitStack()
         self._tools: list[Tool] = []
         self._resources: list[Resource] = []
+        self._connected: bool = False
 
     async def connect(self) -> None:
         """Connect to the MCP server using Streamable HTTP transport."""
@@ -63,6 +64,9 @@ class MCPClient:
 
             # List available tools and resources
             await self.refresh_capabilities()
+
+            # Mark as connected
+            self._connected = True
         finally:
             # Restore original NO_PROXY values
             if old_no_proxy:
@@ -104,6 +108,39 @@ class MCPClient:
         """Get the list of available resources."""
         return self._resources
 
+    def is_connected(self) -> bool:
+        """Check if the client is connected to the MCP server.
+
+        Returns:
+            True if connected, False otherwise
+        """
+        return self._connected and self.session is not None
+
+    async def check_health(self) -> bool:
+        """Check if the connection to the MCP server is still alive.
+
+        Attempts to list tools to verify connection health.
+
+        This method is safe to call and will never raise exceptions.
+
+        Returns:
+            True if connection is healthy, False otherwise
+        """
+        if not self.is_connected():
+            return False
+
+        try:
+            # Try to list tools with a short timeout
+            await self.session.list_tools()
+            return True
+        except Exception as e:
+            # Log at debug level to avoid spam, only info on first detection
+            if self._connected:
+                logger.info(f"MCP connection lost: {type(e).__name__}")
+            logger.debug(f"Health check failed: {e}")
+            self._connected = False
+            return False
+
     async def call_tool(
         self, tool_name: str, arguments: dict[str, Any] | None = None
     ) -> tuple[bool, str]:
@@ -144,6 +181,13 @@ class MCPClient:
         except Exception as e:
             error_msg = f"Tool execution failed: {str(e)}"
             logger.error(error_msg)
+
+            # Check if this is a connection error
+            error_str = str(e).lower()
+            if any(term in error_str for term in ["connection", "broken", "closed", "timeout", "unreachable"]):
+                logger.error("Connection error detected, marking as disconnected")
+                self._connected = False
+
             return False, error_msg
 
     async def read_resource(self, uri: str) -> tuple[bool, str]:
@@ -184,9 +228,20 @@ class MCPClient:
             return False, error_msg
 
     async def disconnect(self) -> None:
-        """Disconnect from the MCP server."""
+        """Disconnect from the MCP server.
+
+        This method is safe to call and will suppress any exceptions
+        that occur during cleanup of broken connections.
+        """
         logger.info("Disconnecting from MCP server")
-        await self._exit_stack.aclose()
+        self._connected = False
+
+        try:
+            await self._exit_stack.aclose()
+        except Exception as e:
+            # Suppress exceptions during cleanup of broken connections
+            logger.debug(f"Exception during disconnect (expected for broken connections): {e}")
+
         self.session = None
 
     async def __aenter__(self):

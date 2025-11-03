@@ -58,9 +58,10 @@ NeuroMCP bridges the gap between the Neuro AI system and MCP servers, allowing t
 
 - **MCP Tool → Neuro Action Translation**: Automatically converts MCP tools to Neuro-compatible actions
 - **Schema Simplification**: Removes MCP schema features not supported by Neuro-API
-- **Web Transport**: Supports Stream HTTP for MCP communication
+- **Stream HTTP Transport**: Supports Stream HTTP for MCP communication (SSE deprecated)
 - **Client Mode**: Connects to Neuro server as a client (no port conflicts)
-- **Real-time Synchronization**: Dynamically updates available tools
+- **Manual Control**: User-driven registration/unregistration of actions
+- **Real-time Status**: Check connection status and registered actions on-demand
 - **Proxy Bypass**: Automatically bypasses system proxies for localhost connections
 - **Logging and Monitoring**: Comprehensive logging for debugging
 
@@ -106,8 +107,25 @@ The bridge will:
 - Connect to the MCP server and discover tools
 - Convert MCP tools to Neuro actions
 - Connect to the Neuro server as a client
-- Register the actions with Neuro
+- Register the actions with Neuro (initial sync)
+- Provide manual control interface for managing actions
 - Execute MCP tools when Neuro requests actions
+
+### Manual Control Commands
+
+Once the bridge is running, you can use these commands:
+
+- **`r`** - Register/sync MCP tools as Neuro actions
+- **`u`** - Unregister all actions from Neuro
+- **`s`** - Show connection status and registered actions
+- **`q`** - Quit the bridge
+
+**Example workflow:**
+1. Start the bridge (automatically registers tools on startup)
+2. If MCP server disconnects, press `u` to unregister actions
+3. When MCP server is back online, press `r` to re-register tools
+4. Press `s` anytime to check connection status
+5. Press `q` to cleanly shut down the bridge
 
 ### Command Line Options
 
@@ -202,9 +220,22 @@ Game Name: NeuroMCP
 2025-11-03 12:50:50,202 - neuro_mcp.bridge - INFO - Mapped tool: current_time -> current_time
 2025-11-03 12:50:50,202 - neuro_mcp.neuro_client - INFO - Set 4 available actions
 2025-11-03 12:50:50,202 - neuro_mcp.bridge - INFO - Synchronized 4 tools as Neuro actions
-2025-11-03 12:50:50,202 - neuro_mcp.bridge - INFO - Bridge is running. Press Ctrl+C to stop
-...
+2025-11-03 12:50:50,202 - neuro_mcp.bridge - INFO - Bridge is running with manual control enabled.
+
+============================================================
+MANUAL CONTROL MODE
+============================================================
+Available commands:
+  r - Register/sync MCP tools as Neuro actions
+  u - Unregister all actions from Neuro
+  s - Show connection status
+  q - Quit the bridge
+============================================================
+
+Enter command (r/u/s/q):
 ```
+
+You can now use the manual control commands to manage action registration.
 
 ### Interacting with Tools
 
@@ -307,8 +338,28 @@ The following MCP/JSON Schema features are **not supported** (removed during tra
 **Symptom:** WebSocket connection closes right after connecting
 
 **Solutions:**
-- Make sure Neuro server and mcp is running BEFORE starting bridge
+- Make sure Neuro server and MCP server are running BEFORE starting bridge
 - Check Neuro server logs for errors
+
+### MCP Server Disconnected
+
+**Symptom:** MCP server stops or disconnects while bridge is running
+
+**Solutions:**
+1. Press `s` to check connection status
+2. Press `u` to unregister all actions from Neuro (prevents failed action calls)
+3. Restart the MCP server
+4. Press `r` to re-register actions once MCP is back online
+
+### Actions Not Appearing in Neuro
+
+**Symptom:** Actions don't show up after starting the bridge
+
+**Solutions:**
+- Wait a few seconds for initial sync to complete
+- Press `s` to verify connection status
+- Press `r` to manually trigger registration
+- Check bridge logs for errors during tool conversion
 
 ## Development
 

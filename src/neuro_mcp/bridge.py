@@ -60,6 +60,12 @@ class NeuroMCPBridge:
         """
         logger.info(f"Bridge handling Neuro action: {action.name}")
 
+        # Check if MCP client is connected
+        if not self.mcp_client.is_connected():
+            error_msg = "MCP server is not connected. Cannot execute action."
+            logger.error(error_msg)
+            return False, error_msg
+
         # Look up the original MCP tool name
         mcp_tool_name = self.tool_registry.get_mcp_tool_name(action.name)
 
@@ -72,10 +78,14 @@ class NeuroMCPBridge:
         arguments = parse_action_data(action.data)
         logger.debug(f"Parsed arguments: {arguments}")
 
-        # Call the MCP tool
-        success, result = await self.mcp_client.call_tool(mcp_tool_name, arguments)
-
-        return success, result
+        # Call the MCP tool with error handling for disconnection
+        try:
+            success, result = await self.mcp_client.call_tool(mcp_tool_name, arguments)
+            return success, result
+        except Exception as e:
+            error_msg = f"MCP tool call failed: {str(e)}"
+            logger.error(error_msg, exc_info=True)
+            return False, error_msg
 
     async def _sync_tools(self) -> None:
         """Synchronize MCP tools as Neuro actions.
@@ -110,26 +120,114 @@ class NeuroMCPBridge:
 
         logger.info(f"Synchronized {len(neuro_actions)} tools as Neuro actions")
 
-    async def _monitor_connections(self) -> None:
-        """Monitor and log connection status."""
+    async def _handle_user_commands(self, cancel_scope) -> None:
+        """Handle manual user commands for controlling the bridge.
+
+        Args:
+            cancel_scope: Trio cancel scope to signal shutdown
+        """
+        print("\n" + "=" * 60)
+        print("MANUAL CONTROL MODE")
+        print("=" * 60)
+        print("Available commands:")
+        print("  r - Register/sync MCP tools as Neuro actions")
+        print("  u - Unregister all actions from Neuro")
+        print("  s - Show connection status")
+        print("  q - Quit the bridge")
+        print("=" * 60)
+        print()
+
         while True:
-            await trio.sleep(30)
-            connected = "connected" if not self.neuro_client.not_connected else "disconnected"
-            logger.info(f"Status: Neuro client {connected}")
-            logger.debug(f"Available actions: {self.tool_registry.get_all_neuro_actions()}")
+            try:
+                # Get user input in a non-blocking way
+                command = await trio.to_thread.run_sync(
+                    lambda: input("Enter command (r/u/s/q): ").strip().lower()
+                )
+
+                if command == 'r':
+                    await self._manual_register()
+                elif command == 'u':
+                    await self._manual_unregister()
+                elif command == 's':
+                    await self._show_status()
+                elif command == 'q':
+                    logger.info("User requested quit. Shutting down bridge...")
+                    print("\nShutting down bridge...")
+                    cancel_scope.cancel()
+                    break
+                else:
+                    print(f"Unknown command: {command}")
+                    print("Valid commands: r (register), u (unregister), s (status), q (quit)")
+
+            except Exception as e:
+                logger.error(f"Error handling user command: {e}", exc_info=True)
+                print(f"Error: {e}")
+
+    async def _manual_register(self) -> None:
+        """Manually register/sync MCP tools as Neuro actions."""
+        logger.info("Manual registration requested...")
+        print("\nRegistering MCP tools as Neuro actions...")
+
+        try:
+            await self._sync_tools()
+            print(f"✓ Successfully registered {len(self.tool_registry.get_all_neuro_actions())} actions")
+        except Exception as e:
+            logger.error(f"Failed to register tools: {e}", exc_info=True)
+            print(f"✗ Failed to register tools: {e}")
+
+    async def _manual_unregister(self) -> None:
+        """Manually unregister all actions from Neuro."""
+        logger.info("Manual unregistration requested...")
+        print("\nUnregistering all actions from Neuro...")
+
+        try:
+            await self.neuro_client.unregister_all_actions()
+            print("✓ Successfully unregistered all actions")
+        except Exception as e:
+            logger.error(f"Failed to unregister actions: {e}", exc_info=True)
+            print(f"✗ Failed to unregister actions: {e}")
+
+    async def _show_status(self) -> None:
+        """Show current connection and registration status."""
+        logger.info("Status check requested...")
+        print("\n" + "=" * 60)
+        print("BRIDGE STATUS")
+        print("=" * 60)
+
+        # Check Neuro connection
+        neuro_connected = not self.neuro_client.not_connected
+        neuro_status = "✓ Connected" if neuro_connected else "✗ Disconnected"
+        print(f"Neuro API:  {neuro_status}")
+
+        # Check MCP connection
+        mcp_connected = await self.mcp_client.check_health()
+        mcp_status = "✓ Connected" if mcp_connected else "✗ Disconnected"
+        print(f"MCP Server: {mcp_status}")
+
+        # Show registered actions
+        actions = self.tool_registry.get_all_neuro_actions()
+        print(f"\nRegistered actions: {len(actions)}")
+        if actions:
+            for action in actions:
+                mcp_tool = self.tool_registry.get_mcp_tool_name(action)
+                print(f"  - {action} (MCP: {mcp_tool})")
+
+        print("=" * 60)
+        print()
 
     async def run(self) -> None:
         """Run the bridge.
 
         This connects to both the MCP server and the Neuro server,
-        and synchronizes tools between them.
+        and provides manual control for tool registration.
         """
         logger.info("Starting NeuroMCP Bridge...")
         logger.info(f"MCP server: {self.mcp_server_url} (Streamable HTTP)")
         logger.info(f"Neuro server: {self.neuro_websocket_url}")
 
         async with self.mcp_client:
-            # Synchronize tools
+            # Initial sync of tools
+            logger.info("Performing initial tool synchronization...")
             await self._sync_tools()
 
             # Connect to Neuro server and run
@@ -148,10 +246,10 @@ class NeuroMCPBridge:
                     self.neuro_websocket_url
                 )
 
-                # Start monitoring task
-                nursery.start_soon(self._monitor_connections)
+                # Start manual command handler
+                nursery.start_soon(self._handle_user_commands, nursery.cancel_scope)
 
-                logger.info("Bridge is running. Press Ctrl+C to stop.")
+                logger.info("Bridge is running with manual control enabled.")
 
     async def refresh_tools(self) -> None:
         """Manually refresh the tool list from MCP server.
