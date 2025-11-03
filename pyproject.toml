@@ -1,0 +1,25 @@
+[project]
+name = "neuromcp"
+version = "0.1.0"
+description = "Translation layer between Neuro-API and MCP protocol"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "eventmanagerpy>=0.2.8",
+    "hatchling>=1.27.0",
+    "httpx>=0.28.1",
+    "mcp>=1.20.0",
+    "neuro-api>=2.2.1",
+    "trio>=0.27.0",
+    "trio-websocket>=0.11.0",
+]
+
+[project.scripts]
+neuromcp = "neuro_mcp.__main__:cli"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/neuro_mcp"]

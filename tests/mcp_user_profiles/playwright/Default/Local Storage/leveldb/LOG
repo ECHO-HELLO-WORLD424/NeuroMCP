@@ -1,0 +1,5 @@
+2025/11/03-12:29:51.100 5610 Creating DB C:\Dev\PyCharmProjects\NeuroMCP\tests\mcp_user_profiles\playwright\Default\Local Storage\leveldb since it was missing.
+2025/11/03-12:29:51.123 5610 Reusing MANIFEST C:\Dev\PyCharmProjects\NeuroMCP\tests\mcp_user_profiles\playwright\Default\Local Storage\leveldb/MANIFEST-000001
+2025/11/03-12:30:51.151 4768 Level-0 table #5: started
+2025/11/03-12:30:51.160 4768 Level-0 table #5: 15272 bytes OK
+2025/11/03-12:30:51.167 4768 Delete type=0 #3
