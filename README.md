@@ -157,7 +157,7 @@ python mock_mcp_server.py
 ```
 
 Expected output:
-```
+```terminaloutput
 ============================================================
 Mock MCP Server
 ============================================================
@@ -179,7 +179,7 @@ python -m neuro_mcp --verbose
 ```
 
 Expected output:
-```
+```terminaloutput
 ============================================================
 NeuroMCP Bridge (Client Mode)
 ============================================================
@@ -205,7 +205,7 @@ Game Name: NeuroMCP
 ### Interacting with Tools
 
 In **Terminal 1** (Neuro test server), you should now see:
-```bash
+```terminaloutput
 ============================================================
 CLIENT CONNECTED: ::1:55904
 ============================================================
@@ -237,7 +237,7 @@ Available actions:
 
 Try executing the tools:
 
-```bash
+```terminaloutput
 > send greet {"name": "Neuro", "style": "casual"} 
 
 Sending action 'greet'...
@@ -310,7 +310,7 @@ The following MCP/JSON Schema features are **not supported** (removed during tra
 
 ### Project Structure
 
-```
+```terminaloutput
 NeuroMCP/
 ├── src/neuro_mcp/
 │   ├── __init__.py          # Package exports
