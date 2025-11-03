@@ -169,7 +169,12 @@ class NeuroMCPBridge:
         print("\nRegistering MCP tools as Neuro actions...")
 
         try:
+            # Sync tools from MCP server (updates local list)
             await self._sync_tools()
+
+            # Actually send registration to Neuro server
+            await self.neuro_client.register_actions_with_neuro()
+
             print(f"✓ Successfully registered {len(self.tool_registry.get_all_neuro_actions())} actions")
         except Exception as e:
             logger.error(f"Failed to register tools: {e}", exc_info=True)

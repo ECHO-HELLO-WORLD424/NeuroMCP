@@ -356,7 +356,7 @@ The following MCP/JSON Schema features are **not supported** (removed during tra
 **Symptom:** Actions don't show up after starting the bridge
 
 **Solutions:**
-- Wait a few seconds for initial sync to complete
+- **Wait a few seconds for sync to complete**
 - Press `s` to verify connection status
 - Press `r` to manually trigger registration
 - Check bridge logs for errors during tool conversion
