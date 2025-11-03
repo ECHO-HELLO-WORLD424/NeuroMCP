@@ -3,11 +3,9 @@
 import logging
 from typing import Callable, Awaitable
 
-import trio
 from neuro_api.trio_ws import TrioNeuroAPIComponent
 from neuro_api.api import NeuroAction
 from neuro_api.command import Action
-from libcomponent.component import Event
 
 logger = logging.getLogger(__name__)
 
