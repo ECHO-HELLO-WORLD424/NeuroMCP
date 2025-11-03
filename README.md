@@ -33,13 +33,13 @@ NeuroMCP bridges the gap between the Neuro AI system and MCP servers, allowing t
 │             │               │
 │  ┌──────────▼───────────┐   │
 │  │ MCP Client           │   │  ← Calls MCP tools
-│  │ - SSE transport      │   │
+│  │ - Stream HTTP        │   │
 │  │ - Tool discovery     │   │
 │  │ - Tool execution     │   │
 │  └──────────────────────┘   │
 └─────────────┬───────────────┘
               │
-              │ MCP Protocol (JSON-RPC 2.0, SSE)
+              │ MCP Protocol (Stream HTTP)
               │
 ┌─────────────▼───────────────┐
 │   MCP Server(s)             │
@@ -47,7 +47,6 @@ NeuroMCP bridges the gap between the Neuro AI system and MCP servers, allowing t
 │  - Database                 │
 │  - Web Search               │
 │  - Custom Tools             │
-│  Port: 3000                 │
 └─────────────────────────────┘
 ```
 
@@ -113,7 +112,7 @@ neuromcp --help
 ```
 
 Options:
-- `--mcp-url`: URL of the MCP server SSE endpoint (default: `http://127.0.0.1:3000/sse`)
+- `--mcp-url`: URL of the MCP server SSE endpoint (default: `http://127.0.0.1:3000/mcp`)
 - `--neuro-url`: WebSocket URL of the Neuro server (default: `ws://localhost:8000`)
 - `--game-name`: Name of the game/application (default: `NeuroMCP`)
 - `--debug`: Enable debug logging
@@ -129,8 +128,7 @@ async def main():
     bridge = NeuroMCPBridge(
         neuro_websocket_url="ws://localhost:8000",
         game_name="NeuroMCP",
-        mcp_server_url="http://localhost:3000/sse",
-        mcp_transport="sse",
+        mcp_server_url="http://localhost:3000/mcp",
     )
     await bridge.run()
 
@@ -317,10 +315,10 @@ NeuroMCP/
 ├── src/neuro_mcp/
 │   ├── __init__.py          # Package exports
 │   ├── __main__.py          # CLI entry point
-│   ├── bridge.py            # Main orchestrator (~190 lines)
-│   ├── mcp_client.py        # MCP client (SSE) (~180 lines)
-│   ├── neuro_client.py      # Neuro-API client (~150 lines)
-│   └── translation.py       # Translation layer (~220 lines)
+│   ├── bridge.py            # Main orchestrator 
+│   ├── mcp_client.py        # MCP client 
+│   ├── neuro_client.py      # Neuro-API client 
+│   └── translation.py       # Translation layer 
 ├── examples/
 │   ├── basic_usage.py       # Example script
 │   ├── mock_mcp_server.py   # Test MCP server with 4 tools
@@ -335,5 +333,6 @@ MIT
 
 ## Credits
 
-- Neuro-API: https://github.com/VedalAI/neuro-game-sdk
+- Original Neuro-SDK: https://github.com/VedalAI/neuro-game-sdk
+- Python implementation of Neuro-SDK: https://github.com/CoolCat467/Neuro-API
 - MCP: https://modelcontextprotocol.io/

@@ -4,7 +4,7 @@
 
   | Aspect         | Neuro-API                             | MCP                              |
   |----------------|---------------------------------------|----------------------------------|
-  | Transport      | WebSocket only                        | stdio, SSE, WebSocket            |
+  | Transport      | WebSocket only                        | stdio, Stream HTTP               |
   | Message Format | Custom JSON commands                  | JSON-RPC 2.0                     |
   | Protocol Model | Game-centric, action-based            | LLM-centric, tool/resource-based |
   | Direction      | Bidirectional (server pushes actions) | Request-response                 |
