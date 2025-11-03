@@ -1,6 +1,10 @@
 # NeuroMCP
 
-Translation layer between Neuro-API and MCP (Model Context Protocol).
+<div align="center">
+  <img src="./assets/NeuroMCPIcon.png" alt="Logo" width="256" height="256">
+  <h3 align="center">Translation layer between Neuro-API and MCP (Model Context Protocol).</h3>
+  <p>A MCP translation layer for Neuro-SDK, allow Neuro to use MCP tools</p>
+</div>
 
 ## Overview
 
